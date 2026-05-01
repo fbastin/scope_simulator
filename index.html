@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de Lunette de Tir Avancé</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+            padding: 15px;
+        }
+        
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 1000px) {
+            .main-wrapper {
+                flex-direction: row;
+                max-width: 1300px;
+                align-items: flex-start;
+            }
+            .controls-wrapper {
+                flex: 2;
+                background-color: #ecf0f1;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                align-content: start;
+            }
+            .header-panel {
+                grid-column: 1 / -1;
+                margin-bottom: 5px;
+            }
+            .panel-group {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            .scope-column {
+                flex: 1;
+                position: sticky;
+                top: 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 999px) {
+            .controls-wrapper {
+                background-color: #ecf0f1;
+                padding: 15px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            }
+            .panel-group {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            .panel { margin-bottom: 15px; }
+        }
+        
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #bdc3c7;
+        }
+
+        h2 { color: #2c3e50; margin: 0; font-size: 1.3em; }
+        h3 { font-size: 1.05em; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; color: #2980b9; }
+        
+        .input-group { margin-bottom: 10px; }
+        .flex-group { display: flex; gap: 10px; align-items: stretch; }
+        .flex-group .input-group { flex: 1; margin-bottom: 0; }
+        
+        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85em; color: #34495e; }
+        
+        input, select {
+            width: 100%;
+            padding: 7px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        input[type="range"] { padding: 0; cursor: pointer; }
+        input[type="color"] { padding: 2px; height: 32px; cursor: pointer; }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input { width: auto; transform: scale(1.2); }
+        .checkbox-group label { margin: 0; cursor: pointer; }
+
+        .panel {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dcdde1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .result-box {
+            padding: 10px;
+            background-color: #2ecc71;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 1.05em;
+            font-weight: bold;
+            color: white;
+            margin-top: auto;
+        }
+        .displacement-box { background-color: #3498db; font-size: 0.95em; }
+        
+        .scope-lens {
+            background: #8e9e7b;
+            border-radius: 50%;
+            border: 14px solid #1a1a1a;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+            width: 360px;
+            height: 360px;
+            position: relative;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .scope-lens.keyboard-active {
+            border-color: #3498db;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 0 20px rgba(52, 152, 219, 0.8);
+            cursor: crosshair;
+        }
+
+        #scopeCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .value-display { font-weight: bold; color: #e74c3c; }
+        .lang-select { width: auto; padding: 4px 8px; font-weight: bold; }
+        .keyboard-hint { text-align: center; font-size: 0.8em; color: #ecf0f1; margin-top: 10px; }
+        
+        #customTurretWrapper { display: none; gap: 5px; }
+        #customTurretInput { flex: 2; }
+        #customTurretUnit { flex: 1; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="controls-wrapper">
+        <div class="header-panel">
+            <h2 data-i18n="appTitle">Simulateur de Lunette</h2>
+            <select id="langSelect" class="lang-select" onchange="changeLanguage()">
+                <option value="fr">FR 🇫🇷</option>
+                <option value="en">EN 🇬🇧</option>
+            </select>
+        </div>
+        
+        <div class="panel-group">
+            <div class="panel">
+                <h3 data-i18n="panel1Title">1. Cible et Télémétrie</h3>
+                <div class="flex-group">
+                    <div class="input-group">
+                        <label data-i18n="lblPreset">Cible Prédéfinie :</label>
+                        <select id="presetTarget" onchange="applyPreset()">
+                            <option value="ipsc" data-i18n="optIpsc">Cible IPSC (0.45m x 0.57m)</option>
+                            <option value="deer" data-i18n="optDeer">Chevreuil (0.6m x 0.7m)</option>
+                            <option value="boar" data-i18n="optBoar">Sanglier (0.9m x 0.5m)</option>
+                            <option value="gong" data-i18n="optGong">Gong (0.5m x 0.5m)</option>
+                            <option value="custom" data-i18n="optCustomTarget">Personnalisée...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="lblUnit">Unité :</label>
+                        <select id="sizeUnit" onchange="onUnitChange()">
+                            <option value="meters" data-i18n="optMeters">Mètres (Dist. en M)</option>
+                            <option value="inches" data-i18n="optInches">Pouces (Dist. en Yd)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-group">
+                    <div class="input-group">
+                        <label data-i18n="lblWidth">Largeur :</label>
+                        <input type="number" id="targetWidth" value="0.45" step="0.01" oninput="setCustomPreset(); updateApp()">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="lblHeight">Hauteur :</label>
+                        <input type="number" id="targetHeight" value="0.57" step="0.01" oninput="setCustomPreset(); updateApp()">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="lblMeasuredDim">Dimension mesurée (Mrad/Mil) :</label>
+                    <div class="flex-group">
+                        <select id="measuredAxis" onchange="updateApp()">
+                            <option value="height" data-i18n="optMeasureHeight">Hauteur</option>
+                            <option value="width" data-i18n="optMeasureWidth">Largeur</option>
+                        </select>
+                        <input type="number" id="milsRead" value="2.5" step="0.1" oninput="updateApp()" title="Unité lue dans la lunette (à zoom max si SFP)">
+                    </div>
+                </div>
+                <div id="distanceResult" class="result-box">Distance: --</div>
+            </div>
+
+            <div class="panel">
+                <h3 data-i18n="panel2Title">2. Tourelles et Corrections</h3>
+                <div class="input-group">
+                    <label data-i18n="lblClickValue">Valeur d'un Clic :</label>
+                    <select id="turretValue" onchange="toggleCustomTurret(); updateApp()">
+                        <option value="0.1mil">0.1 MRAD/MIL (1cm à 100m)</option>
+                        <option value="0.25moa">1/4 MOA (~0.73cm à 100m)</option>
+                        <option value="0.125moa">1/8 MOA (~0.36cm à 100m)</option>
+                        <option value="custom" data-i18n="optCustomTurret">Personnalisé...</option>
+                    </select>
+                </div>
+                <div class="input-group" id="customTurretWrapper">
+                    <input type="number" id="customTurretInput" value="0.05" step="0.01" oninput="updateApp()">
+                    <select id="customTurretUnit" onchange="updateApp()">
+                        <option value="mrad">MRAD / MIL</option>
+                        <option value="moa">MOA</option>
+                    </select>
+                </div>
+                <div class="flex-group">
+                    <div class="input-group">
+                        <label data-i18n="lblElev">Élévation (Haut = +) :</label>
+                        <input type="number" id="elevClicks" value="0" step="1" oninput="updateApp()">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="lblWind">Dérive (Droite = +) :</label>
+                        <input type="number" id="windClicks" value="0" step="1" oninput="updateApp()">
+                    </div>
+                </div>
+                <div id="displacementResult" class="result-box displacement-box">Impact: --</div>
+            </div>
+        </div>
+
+        <div class="panel-group">
+            <div class="panel">
+                <h3 data-i18n="panel3Title">3. Optique & Grossissement</h3>
+                <div class="input-group">
+                    <label data-i18n="lblReticleStyle">Style de Réticule :</label>
+                    <select id="reticleStyle" onchange="onReticleChange()">
+                        <option value="mrad" data-i18n="optMrad">MRAD Standard</option>
+                        <option value="pso" data-i18n="optPso">PSO-1 (SVD)</option>
+                        <option value="mildot" data-i18n="optMildot">Mil-Dot Classique</option>
+                        <option value="tree" data-i18n="optTree">Sapin de Noël (EBR)</option>
+                        <option value="german4" data-i18n="optGerman4">German #4 (Chasse)</option>
+                        <option value="duplex" data-i18n="optDuplex">Duplex (Leupold)</option>
+                        <option value="horus" data-i18n="optHorus">Horus H59 (TReMoR)</option>
+                        <option value="moacross" data-i18n="optMoaCross">MOA Crosshair</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="lblFocalPlane">Type de Plan Focal :</label>
+                    <select id="focalPlane" onchange="updateApp()">
+                        <option value="ffp" data-i18n="optFfp">Premier Plan Focal (FFP)</option>
+                        <option value="sfp" data-i18n="optSfp">Second Plan Focal (SFP)</option>
+                    </select>
+                </div>
+                <div class="flex-group">
+                    <div class="input-group">
+                        <label data-i18n="lblMagMin">Zoom Min :</label>
+                        <input type="number" id="magMin" value="4" step="1" min="1" oninput="updateMagLimits()">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="lblMagMax">Zoom Max :</label>
+                        <input type="number" id="magMax" value="16" step="1" min="1" oninput="updateMagLimits()">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label style="margin-top: 5px;"><span data-i18n="lblCurrentMag">Grossissement :</span> <span id="magDisplay" class="value-display">16</span>x</label>
+                    <input type="range" id="currentMag" min="4" max="16" value="16" step="0.5" oninput="updateApp()">
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 data-i18n="panel4Title">4. Œil & Illumination</h3>
+                <div class="input-group checkbox-group">
+                    <input type="checkbox" id="illumActive" onchange="updateApp()">
+                    <label for="illumActive" data-i18n="lblIllum">Illumination activée</label>
+                </div>
+                <div class="flex-group">
+                    <div class="input-group">
+                        <label data-i18n="lblColor">Couleur</label>
+                        <div class="flex-group">
+                            <select id="illumColorSelect" onchange="toggleCustomColor(); updateApp()">
+                                <option value="#ff0000" data-i18n="optColorRed">Rouge</option>
+                                <option value="#00ff00" data-i18n="optColorGreen">Vert</option>
+                                <option value="custom" data-i18n="optColorCustom">Personnalisé...</option>
+                            </select>
+                            <input type="color" id="illumColorCustom" value="#ff8800" style="display: none;" oninput="updateApp()">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="lblType">Zone</label>
+                        <select id="illumType" onchange="updateApp()">
+                            <option value="partial" data-i18n="optIllumPart">Partiel (Centre)</option>
+                            <option value="full" data-i18n="optIllumFull">Totalité</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="lblIntensity">Intensité Lumineuse</label>
+                    <input type="range" id="illumIntensity" min="0.1" max="1" value="0.8" step="0.1" oninput="updateApp()">
+                </div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 5px 0;">
+                <div class="input-group">
+                    <label data-i18n="lblEyeDist">Dégagement oculaire (Distance Z) :</label>
+                    <input type="range" id="eyeDist" min="0.3" max="1.5" value="1.0" step="0.05" oninput="updateApp()">
+                </div>
+                <div class="flex-group">
+                    <div class="input-group">
+                        <label data-i18n="lblParallaxX">Parallaxe X :</label>
+                        <input type="range" id="eyeX" min="-100" max="100" value="0" step="1" oninput="updateApp()">
+                    </div>
+                    <div class="input-group">
+                        <label data-i18n="lblParallaxY">Parallaxe Y :</label>
+                        <input type="range" id="eyeY" min="-100" max="100" value="0" step="1" oninput="updateApp()">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="scope-column">
+        <div class="scope-lens" id="scopeContainer">
+            <canvas id="scopeCanvas" width="600" height="600"></canvas>
+        </div>
+        <div class="keyboard-hint" data-i18n="lblKeyboardHint">
+            Survolez la lunette pour utiliser le clavier (Flèches = Clics, +/- = Zoom)
+        </div>
+    </div>
+</div>
+
+<!-- Lier le fichier JavaScript externe ici -->
+<script src="script.js"></script>
+</body>
+</html>
