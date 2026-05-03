@@ -292,7 +292,7 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
     // PSO-1 is a fixed 4x scope (~6° FOV ≈ 105 mrad) — override zoom
     // so the full reticle (±11 mil) fits within the visible scope circle
     if (style === 'pso') {
-        zoomRatio = 0.34;
+        zoomRatio = 0.25;
     }
 
     // The reticle scales with zoom if FFP, remains fixed if SFP
