@@ -333,111 +333,14 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
 
     // 3. DRAW RETICLE
     if (style === 'pso') {
-        const mil = currentPixelsPerMil;
-
-        const drawChevron = (x, y, size, thickness) => {
-            ctx.lineWidth = thickness;
-            ctx.beginPath();
-            ctx.moveTo(x - size, y + size); ctx.lineTo(x, y); ctx.lineTo(x + size, y + size);
-            ctx.stroke();
-        };
-
-        // --- Horizontal mil scale ---
-        applyIlluminationStyle(false);
-        ctx.lineWidth = lwFine;
-        ctx.beginPath();
-        ctx.moveTo(cx - 11 * mil, cy); ctx.lineTo(cx - 0.6 * mil, cy);
-        ctx.moveTo(cx + 0.6 * mil, cy); ctx.lineTo(cx + 11 * mil, cy);
-        ctx.stroke();
-
-        // Tick marks pointing DOWNWARD
-        for (let i = -10; i <= 10; i++) {
-            if (i === 0) continue;
-            let xPos = cx + i * mil;
-            let h = (Math.abs(i) % 5 === 0) ? mil * 0.6 : mil * 0.3;
-            ctx.beginPath();
-            ctx.moveTo(xPos, cy); ctx.lineTo(xPos, cy + h);
-            ctx.stroke();
-
-            if (Math.abs(i) === 10) {
-                ctx.font = `bold ${Math.max(12, mil * 0.8)}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "top";
-                ctx.fillText("10", xPos, cy + h + 2);
-            }
-        }
-
-        // --- Main chevron at center of scale ---
-        applyIlluminationStyle(true);
-        drawChevron(cx, cy - mil * 0.6, mil * 0.6, lwFine * 1.8);
-
-        // --- Vertical crosshair (lower half) ---
-        ctx.lineWidth = lwFine;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + mil * 0.3); ctx.lineTo(cx, cy + 15 * mil);
-        ctx.stroke();
-
-        // --- BDC chevrons ---
-        drawChevron(cx, cy + 3.4 * mil, mil * 0.4, lwFine);
-        drawChevron(cx, cy + 7.2 * mil, mil * 0.4, lwFine);
-        drawChevron(cx, cy + 11.4 * mil, mil * 0.4, lwFine);
-
-        // --- Rangefinder (lower-left) ---
-        const rfBaseY = cy + 10 * mil;
-        const rfStartX = cx - 11 * mil;
-        const rfEndX = cx - 2 * mil;
-        const rfWidth = rfEndX - rfStartX;
-
-        // Baseline
-        ctx.lineWidth = lwFine;
-        ctx.beginPath();
-        ctx.moveTo(rfStartX, rfBaseY); ctx.lineTo(rfEndX + mil, rfBaseY);
-        ctx.stroke();
-
-        // Rangefinder curve: 10 on left (low), 2 on right (high)
-        ctx.beginPath();
-        for (let d = 1000; d >= 200; d -= 20) {
-            let frac = (1000 - d) / 800;
-            let x = rfStartX + frac * rfWidth;
-            let h = (1.7 / d) * 1000 * mil;
-            let y = rfBaseY - h;
-            if (d === 1000) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-
-        // Distance marks every 100m: dash + tick, numbers above every 200m
-        for (let d = 200; d <= 1000; d += 100) {
-            let frac = (1000 - d) / 800;
-            let x = rfStartX + frac * rfWidth;
-            let h = (1.7 / d) * 1000 * mil;
-            let markY = rfBaseY - h;
-            let isMajor = (d % 200 === 0);
-
-            let dashW = isMajor ? mil * 0.3 : mil * 0.2;
-            ctx.lineWidth = lwFine * 0.8;
-            ctx.beginPath();
-            ctx.moveTo(x - dashW, markY); ctx.lineTo(x + dashW, markY);
-            ctx.stroke();
-
-            let tickLen = isMajor ? mil * 0.4 : mil * 0.25;
-            ctx.beginPath();
-            ctx.moveTo(x, markY); ctx.lineTo(x, markY + tickLen);
-            ctx.stroke();
-
-            if (isMajor) {
-                ctx.font = `bold ${Math.max(10, mil * 0.7)}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "bottom";
-                ctx.fillText((d / 100).toString(), x, markY - 2);
-            }
-        }
-
-        // "1,7" height reference at right end of baseline
-        ctx.font = `${Math.max(10, mil * 0.6)}px sans-serif`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-        ctx.fillText("1,7", rfEndX + mil * 0.2, rfBaseY);
-
+        const pso = new PSO1ReticleGenerator({
+            targetHeight: 1.7 // Standard PSO-1 calibration
+        });
+        pso.drawToCanvas(ctx, cx, cy, {
+            mil: currentPixelsPerMil,
+            lwFine: lwFine,
+            applyIllumination: applyIlluminationStyle
+        });
     }
     else if (style === 'german4') {
         const gap = 3 * currentPixelsPerMil;
