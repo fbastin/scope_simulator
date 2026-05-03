@@ -1,0 +1,88 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{cite}
+
+\geometry{margin=1in}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\title{\textbf{Mathematical Specification of the PSO-1 Reticle}}
+\author{Simulator Technical Documentation}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+The PSO-1 (\textit{Pritsel Snaiperskiy Opticheskiy}) is a $4\times24$ telescopic sight introduced in 1963 for the SVD sniper rifle \cite{wiki:pso1}. Its reticle is a highly functional design that integrates a stadiametric rangefinder, windage adjustments, and ballistic drop compensation (BDC) into a single etched-glass pattern \cite{wiki:pso1}. This document provides the mathematical derivations required to implement this reticle accurately in a simulation environment.
+
+\section{Coordinate System and Angular Units}
+The fundamental angular unit used in the PSO-1 is the milliradian (mrad or mil).
+\begin{itemize}
+    \item \textbf{Definition:} One milliradian is $\frac{1}{1000}$ of a radian \cite{wiki:mrad}.
+    \item \textbf{Linear approximation:} Because $\tan(\theta) \approx \theta$ for small angles, an object $1$ meter wide at $1000$ meters subtends exactly $1$ mrad \cite{wiki:mrad}.
+    \item \textbf{SVG Scaling:} For the simulation's coordinate system, the scale is defined strictly as $1 \text{ mrad} = 10 \text{ units}$.
+\end{itemize}
+
+\section{The Stadiametric Rangefinder}
+The stadiametric rangefinder (located in the lower-left quadrant) allows the shooter to determine the distance to a target of known height. 
+
+\subsection{The 1.7m Reference Height}
+The curve is specifically calibrated for a target height of $H = 1.7$ meters, which represents the average height of an infantry soldier \cite{wiki:pso1}. The distance $D$ is found by placing the target's feet on the horizontal baseline and matching the top of the target's head to the curve.
+
+\subsection{Mathematical Derivation of the Curve}
+The angular height $\alpha$ subtended by the target at distance $D$ is given by:
+\begin{equation}
+    \alpha_{mrad} = \frac{1.7}{D} \times 1000 = \frac{1700}{D}
+\end{equation}
+In the simulation coordinate system ($1 \text{ mrad} = 10 \text{ units}$), if the baseline is set at $y_{base}$, the curve's vertical coordinate $y(D)$ is calculated as:
+\begin{equation}
+    y(D) = y_{base} - \left( \frac{1700}{D} \times 10 \right) = y_{base} - \frac{17000}{D}
+\end{equation}
+The reference markings $10, 8, 6, 4,$ and $2$ correspond to ranges of $1000, 800, 600, 400,$ and $200$ meters \cite{wiki:pso1}.
+
+\section{Bullet Drop Compensation (BDC)}
+The PSO-1 utilizes a system of four vertical chevrons ($\land$) to provide aiming points for various ranges.
+
+\subsection{The Elevation Turret and Primary Chevron}
+The top chevron is the primary aiming mark. It is zeroed using the scope's elevation turret, which features BDC calibrated for the $7.62\times54$mmR 7N1 cartridge in $50$m or $100$m increments from $100$m up to $1000$m \cite{wiki:pso1}. 
+
+\subsection{Secondary Holdover Chevrons}
+For ranges beyond the turret's maximum setting of $1000$m, the shooter leaves the turret at $1000$m and utilizes the three lower chevrons. These act as fixed holdovers shifting the trajectory by $100$m each \cite{wiki:pso1}:
+\begin{itemize}
+    \item \textbf{1st Chevron (Main):} $1000$ meters (with turret set to 10).
+    \item \textbf{2nd Chevron:} $1100$ meters.
+    \item \textbf{3rd Chevron:} $1200$ meters.
+    \item \textbf{4th Chevron:} $1300$ meters.
+\end{itemize}
+
+\section{Horizontal Windage Scale}
+The horizontal axis features $10$ hash marks on either side of the center. These marks are spaced at exactly $1$ milliradian intervals \cite{wiki:pso1}. 
+\begin{itemize}
+    \item \textbf{Function:} Correction for crosswind drift and leading moving targets.
+    \item \textbf{Stadiametric Use:} Because the spacing is $1$ mrad, an object that is $5$ meters wide will appear exactly $10$ hash marks wide at a distance of $500$ meters \cite{wiki:pso1}.
+\end{itemize}
+
+\begin{thebibliography}{9}
+
+\bibitem{wiki:pso1}
+Wikipedia contributors. \textit{PSO-1}. In Wikipedia, The Free Encyclopedia. Retrieved from \url{https://en.wikipedia.org/wiki/PSO-1}
+
+\bibitem{wiki:mrad}
+Wikipedia contributors. \textit{Milliradian}. In Wikipedia, The Free Encyclopedia. Retrieved from \url{https://en.wikipedia.org/wiki/Milliradian}
+
+\bibitem{manual:posp}
+\textit{POSP 4x24/PSO-1 Scope Manual}. Scribd. Retrieved from \url{https://www.scribd.com/document/13028967/posp-4x24-pso-1-rifle-scopes-instruction-manual}
+
+\end{thebibliography}
+
+\end{document}
