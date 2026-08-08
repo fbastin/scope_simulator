@@ -320,9 +320,15 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
     ctx.fillStyle = 'rgba(211, 84, 0, 0.8)';
     ctx.fillRect(centerX - targetWPx/2, centerY - targetHPx/2, targetWPx, targetHPx);
 
-    // Offset for turret adjustments
-    const cx = centerX - (windShiftMils * currentPixelsPerMil);
-    const cy = centerY + (elevShiftMils * currentPixelsPerMil);
+    // Offset for turret adjustments.
+    // A turret click is a TRUE angular correction: it is worth the same angle on
+    // the target at every magnification, on SFP just as on FFP. It must therefore
+    // be applied at the scale of the target image (basePixelsPerMil * zoomRatio),
+    // never at the scale of the reticle graduations — which on SFP no longer
+    // measure a mil below the reference magnification. On FFP the two are equal.
+    const truePixelsPerMil = basePixelsPerMil * zoomRatio;
+    const cx = centerX - (windShiftMils * truePixelsPerMil);
+    const cy = centerY + (elevShiftMils * truePixelsPerMil);
 
     const lwFine = Math.max(1, 1.5 * reticleScale);
     const lwThick = Math.max(2.5, 5 * reticleScale);
