@@ -10,8 +10,8 @@ A high-fidelity, web-based simulator for rifle telescopic sights (scopes). This 
 - **Multiple Reticle Styles:** 
     - **Standard MRAD / Mil-Dot:** Classic military and tactical markings.
     - **PSO-1 (SVD):** Authentically modeled Soviet-style reticle with stadiametric rangefinder and BDC chevrons.
-    - **Christmas Tree (EBR):** Advanced holdover grid for windage and elevation.
-    - **Horus H59 / TReMoR:** High-speed tactical grids.
+    - **Christmas Tree:** Advanced holdover grid for windage and elevation.
+    - **Horus H59:** High-speed tactical grid, below the horizontal.
     - **German #4 & Duplex:** Traditional hunting and sport reticles.
     - **MOA Crosshair:** Fine markings for precision shooting.
 - **Ballistics & Telemetry:**

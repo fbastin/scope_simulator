@@ -16,8 +16,8 @@ const translations = {
         optFfp: "Premier Plan Focal (FFP)", optSfp: "Second Plan Focal (SFP)",
         lblMagMin: "Zoom Min :", lblMagMax: "Zoom Max :",
         lblReticleStyle: "Style de Réticule :", optMrad: "MRAD Standard", optMildot: "Mil-Dot Classique",
-        optTree: "Sapin de Noël (EBR)", optGerman4: "German #4 (Chasse)", optPso: "PSO-1 (SVD)",
-        optDuplex: "Duplex (Leupold)", optHorus: "Horus H59 (TReMoR)", optMoaCross: "MOA Crosshair",
+        optTree: "Sapin de Noël", optGerman4: "German #4 (Chasse)", optPso: "PSO-1 (SVD)",
+        optDuplex: "Duplex (Leupold)", optHorus: "Horus H59", optMoaCross: "MOA Crosshair",
         lblCurrentMag: "Grossissement :", 
         panel4Title: "4. Œil & Illumination",
         lblIllum: "Illumination activée", lblColor: "Couleur", optColorRed: "Rouge", optColorGreen: "Vert", optColorCustom: "Personnalisé...", 
@@ -45,8 +45,8 @@ const translations = {
         optFfp: "First Focal Plane (FFP)", optSfp: "Second Focal Plane (SFP)",
         lblMagMin: "Min Zoom:", lblMagMax: "Max Zoom:",
         lblReticleStyle: "Reticle Style:", optMrad: "Standard MRAD", optMildot: "Classic Mil-Dot",
-        optTree: "Christmas Tree (EBR)", optGerman4: "German #4 (Hunting)", optPso: "PSO-1 (SVD)",
-        optDuplex: "Duplex (Leupold)", optHorus: "Horus H59 (TReMoR)", optMoaCross: "MOA Crosshair",
+        optTree: "Christmas Tree", optGerman4: "German #4 (Hunting)", optPso: "PSO-1 (SVD)",
+        optDuplex: "Duplex (Leupold)", optHorus: "Horus H59", optMoaCross: "MOA Crosshair",
         lblCurrentMag: "Magnification:", 
         panel4Title: "4. Eye & Illumination",
         lblIllum: "Illumination active", lblColor: "Color", optColorRed: "Red", optColorGreen: "Green", optColorCustom: "Custom...", 
@@ -467,6 +467,48 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
         ctx.arc(cx, cy, Math.max(1, 0.025 * mil), 0, Math.PI * 2);
         ctx.fill();
     }
+    else if (style === 'mildot') {
+        // Mil-dot geometry, after FM 23-10 fig. 2-21:
+        //  - it is a DUPLEX, not a bare cross: heavy outer posts, fine centre;
+        //  - 4 dots per branch, 1 mil CENTRE TO CENTRE — the first 1 mil from
+        //    the centre, the last 1 mil from the start of the heavy post, so
+        //    the graduated section spans 5 mil each way and no further;
+        //  - dot 0.25 mil across (USMC pattern).
+        const mil = currentPixelsPerMil;
+        const postStart = 5 * mil;
+        const dotR = Math.max(1.5, 0.125 * mil);
+
+        // fine centre section
+        applyIlluminationStyle(false);
+        ctx.lineWidth = lwFine;
+        ctx.beginPath();
+        ctx.moveTo(cx - postStart, cy); ctx.lineTo(cx + postStart, cy);
+        ctx.moveTo(cx, cy - postStart); ctx.lineTo(cx, cy + postStart);
+        ctx.stroke();
+
+        // heavy outer posts — scaled to the reticle, not to a pixel floor, so
+        // they stay recognisably heavy against the fine section at any zoom
+        ctx.lineWidth = Math.max(3, 0.12 * mil);
+        ctx.beginPath();
+        ctx.moveTo(cx - postStart, cy); ctx.lineTo(-2000, cy);
+        ctx.moveTo(cx + postStart, cy); ctx.lineTo(2000, cy);
+        ctx.moveTo(cx, cy - postStart); ctx.lineTo(cx, -2000);
+        ctx.moveTo(cx, cy + postStart); ctx.lineTo(cx, 2000);
+        ctx.stroke();
+
+        applyIlluminationStyle(true);
+        for (let i = 1; i <= 4; i++) {
+            const d = i * mil;
+            ctx.beginPath();
+            ctx.arc(cx - d, cy, dotR, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx + d, cy, dotR, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, cy - d, dotR, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, cy + d, dotR, 0, Math.PI * 2); ctx.fill();
+        }
+    }
     else if (style === 'moacross') {
         const moaToMil = 0.29089;
         const pxPerMoa = currentPixelsPerMil * moaToMil;
@@ -535,14 +577,7 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
 
             applyIlluminationStyle(isCenterZone);
 
-            if (style === 'mildot') {
-                const r = Math.max(2, 0.1 * currentPixelsPerMil);
-                ctx.beginPath();
-                ctx.arc(cx + pos, cy, r, 0, Math.PI*2);
-                ctx.arc(cx, cy + pos, r, 0, Math.PI*2);
-                ctx.fill();
-            } 
-            else if (style === 'mrad') {
+            if (style === 'mrad') {
                 ctx.lineWidth = lwFine * 1.5;
                 ctx.beginPath();
                 ctx.moveTo(cx + pos, cy - hashLen); ctx.lineTo(cx + pos, cy + hashLen);
