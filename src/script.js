@@ -404,9 +404,18 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
         drawTaperedPost(cx + gap, cy, 2000, cy);
     }
     else if (style === 'horus') {
+        // H59 geometry, after the manufacturer's technical data sheet:
+        //  - the Horus grid sits BELOW the horizontal stadia, never around the
+        //    centre — the H59 is a christmas-tree reticle, not a symmetric grid;
+        //  - secondary horizontal lines every 1 mil, down to 20 mil;
+        //  - hash marks along each line every 0.2 mil (the defining subtension),
+        //    the half-width growing from 4 mil on the first rows to 6 mil below;
+        //  - above the horizontal line, nothing but the fine crosshair.
         const mil = currentPixelsPerMil;
-        const gridRange = 15;
-        const dotR = Math.max(1, 0.04 * mil);
+        const rowMax = 20;
+        const subtension = 0.2;
+        const hashHalf = Math.max(1, 0.15 * mil);
+        const milHashHalf = Math.max(2, 0.3 * mil);
 
         applyIlluminationStyle(false);
         ctx.lineWidth = lwFine;
@@ -415,52 +424,48 @@ function drawReticle(milsRead, style, elevShiftMils, windShiftMils, focalPlane, 
         ctx.moveTo(-2000, cy); ctx.lineTo(2000, cy);
         ctx.stroke();
 
-        for (let i = -gridRange; i <= gridRange; i++) {
-            for (let j = -gridRange; j <= gridRange; j++) {
-                if (i === 0 && j === 0) continue;
-                const px = cx + i * mil;
-                const py = cy + j * mil;
-                const isCenterZone = Math.abs(i) <= 3 && Math.abs(j) <= 3;
-                applyIlluminationStyle(isCenterZone);
+        // main horizontal stadia: 0.2 mil hashes, longer every whole mil
+        for (let k = -50; k <= 50; k++) {
+            if (k === 0) continue;
+            const off = k * subtension * mil;
+            const whole = (k % 5 === 0);
+            applyIlluminationStyle(Math.abs(k) <= 15);
+            ctx.lineWidth = whole ? lwFine * 1.5 : lwFine;
+            const h = whole ? milHashHalf : hashHalf;
+            ctx.beginPath();
+            ctx.moveTo(cx + off, cy - h); ctx.lineTo(cx + off, cy + h);
+            ctx.stroke();
+        }
 
-                if (i % 5 === 0 && j % 5 === 0) {
-                    const markLen = Math.max(3, 0.15 * mil);
-                    ctx.lineWidth = lwFine * 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(px - markLen, py); ctx.lineTo(px + markLen, py);
-                    ctx.moveTo(px, py - markLen); ctx.lineTo(px, py + markLen);
-                    ctx.stroke();
-                } else if (i % 1 === 0 && j % 1 === 0) {
-                    ctx.beginPath();
-                    ctx.arc(px, py, dotR * 1.5, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+        // the grid itself, below the horizontal line only
+        for (let row = 1; row <= rowMax; row++) {
+            const py = cy + row * mil;
+            const halfWidth = row <= 4 ? 4 : (row <= 8 ? 5 : 6);
+            applyIlluminationStyle(row <= 3);
 
-                if (j === 0 && i !== 0) {
-                    for (let sub = 1; sub <= 4; sub++) {
-                        const sx = cx + (i - 1 + sub * 0.2) * mil;
-                        ctx.beginPath();
-                        ctx.arc(sx, cy, dotR, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-                if (i === 0 && j !== 0) {
-                    for (let sub = 1; sub <= 4; sub++) {
-                        const sy = cy + (j - 1 + sub * 0.2) * mil;
-                        ctx.beginPath();
-                        ctx.arc(cx, sy, dotR, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
+            ctx.lineWidth = lwFine;
+            ctx.beginPath();
+            ctx.moveTo(cx - halfWidth * mil, py); ctx.lineTo(cx + halfWidth * mil, py);
+            ctx.stroke();
+
+            const steps = Math.round(halfWidth / subtension);
+            for (let k = -steps; k <= steps; k++) {
+                if (k === 0) continue;
+                const off = k * subtension * mil;
+                const whole = (k % 5 === 0);
+                ctx.lineWidth = whole ? lwFine * 1.5 : lwFine;
+                const h = whole ? milHashHalf : hashHalf;
+                ctx.beginPath();
+                ctx.moveTo(cx + off, py - h); ctx.lineTo(cx + off, py + h);
+                ctx.stroke();
             }
         }
 
+        // centre aiming dot (0.05 mil on the real reticle, floored so it stays visible)
         applyIlluminationStyle(true);
-        ctx.lineWidth = lwFine;
         ctx.beginPath();
-        ctx.moveTo(cx - hashLen, cy); ctx.lineTo(cx + hashLen, cy);
-        ctx.moveTo(cx, cy - hashLen); ctx.lineTo(cx, cy + hashLen);
-        ctx.stroke();
+        ctx.arc(cx, cy, Math.max(1, 0.025 * mil), 0, Math.PI * 2);
+        ctx.fill();
     }
     else if (style === 'moacross') {
         const moaToMil = 0.29089;
