@@ -8,7 +8,7 @@ const translations = {
         optCustomTarget: "Personnalisée...",
         lblUnit: "Unité :", optMeters: "Mètres (Dist. en M)", optInches: "Pouces (Dist. en Yd)",
         lblWidth: "Largeur :", lblHeight: "Hauteur :",
-        lblMeasuredDim: "Dimension mesurée (Mrad/Mil) :", optMeasureHeight: "Hauteur", optMeasureWidth: "Largeur",
+        lblMeasuredDim: "Dimension vraie de la cible (Mrad/Mil) :", optMeasureHeight: "Hauteur", optMeasureWidth: "Largeur",
         panel2Title: "2. Tourelles et Corrections", lblClickValue: "Valeur d'un Clic :",
         optCustomTurret: "Personnalisé...",
         lblElev: "Élévation (Haut = +) :", lblWind: "Dérive (Droite = +) :",
@@ -25,6 +25,8 @@ const translations = {
         lblIntensity: "Intensité", lblEyeDist: "Dégagement oculaire (Distance Z) :",
         lblParallaxX: "Parallaxe X (Gauche/Droite) :", lblParallaxY: "Parallaxe Y (Haut/Bas) :",
         resDistPrefix: "Distance : ", resDistMeters: "Mètres",
+        resLecture: "Lecture au réticule à ce grossissement : ",
+        resLectureNote: " — la valeur saisie ci-dessus est la dimension VRAIE.",
         resDistYards: "Yards", resImpPrefix: "Impact : ", dirUp: "HAUT", dirDown: "BAS", dirRight: "DROITE", dirLeft: "GAUCHE",
         unitCm: "cm", unitIn: "po", lblKeyboardHint: "Survolez la lunette pour utiliser le clavier (Flèches = Clics, +/- = Zoom)"
     },
@@ -37,7 +39,7 @@ const translations = {
         optCustomTarget: "Custom...",
         lblUnit: "Unit:", optMeters: "Meters (Dist in M)", optInches: "Inches (Dist in Yd)",
         lblWidth: "Width:", lblHeight: "Height:",
-        lblMeasuredDim: "Measured Dimension (Mrad):", optMeasureHeight: "Height", optMeasureWidth: "Width",
+        lblMeasuredDim: "True target subtension (Mrad):", optMeasureHeight: "Height", optMeasureWidth: "Width",
         panel2Title: "2. Turrets & Corrections", lblClickValue: "Click Value:",
         optCustomTurret: "Custom...",
         lblElev: "Elevation (Up = +):", lblWind: "Windage (Right = +):",
@@ -54,6 +56,8 @@ const translations = {
         lblIntensity: "Intensity", lblEyeDist: "Eye Relief (Distance Z):",
         lblParallaxX: "Parallax X (Left/Right):", lblParallaxY: "Parallax Y (Up/Down):",
         resDistPrefix: "Distance: ", resDistMeters: "Meters",
+        resLecture: "Reticle reading at this magnification: ",
+        resLectureNote: " — the value entered above is the TRUE subtension.",
         resDistYards: "Yards", resImpPrefix: "Impact: ", dirUp: "UP", dirDown: "DOWN", dirRight: "RIGHT", dirLeft: "LEFT",
         unitCm: "cm", unitIn: "in", lblKeyboardHint: "Hover over scope for keyboard controls (Arrows = Clicks, +/- = Zoom)"
     }
@@ -674,7 +678,22 @@ function updateApp() {
     let dist = (unit === 'meters') ? (targetDim * 1000) / milsRead : (targetDim * 27.778) / milsRead;
     
     let uLabel = (unit === 'meters') ? t.resDistMeters : t.resDistYards;
-    document.getElementById('distanceResult').innerText = `${t.resDistPrefix}${dist.toFixed(1)} ${uLabel}`;
+    let txt = `${t.resDistPrefix}${dist.toFixed(1)} ${uLabel}`;
+
+    // CE CHAMP EST LA DIMENSION VRAIE, PAS LE NOMBRE DE GRADUATIONS LUES.
+    // En second plan focal hors du grossissement de référence, les deux diffèrent :
+    // le réticule garde sa taille, l'image non, si bien qu'une cible de 1,2 mil vue à
+    // 15x sur une lunette calibrée à 25x ne couvre que 0,72 graduation. Le dessin en
+    // tient compte depuis toujours ; la distance aussi, puisqu'elle part de la valeur
+    // vraie. Mais rien ne disait laquelle des deux on saisissait — et l'outil de
+    // télémétrie (/telemetrie-reticule.php) demande, lui, la LECTURE. Même nombre
+    // reporté d'une page à l'autre : 417 m ici, 250 m là-bas. On affiche donc la
+    // lecture correspondante, qui est le pont entre les deux.
+    if (focalPlane === 'sfp' && Math.abs(currentMag - magMax) > 1e-6 && magMax > 0) {
+        const lecture = milsRead * (currentMag / magMax);
+        txt += `\n${t.resLecture}${lecture.toFixed(2)} mil${t.resLectureNote}`;
+    }
+    document.getElementById('distanceResult').innerText = txt;
 
     let milPerClick;
     if (turretVal === '0.1mil') milPerClick = 0.1;
