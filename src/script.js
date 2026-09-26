@@ -27,6 +27,8 @@ const translations = {
         resDistPrefix: "Distance : ", resDistMeters: "Mètres",
         resLecture: "Lecture au réticule à ce grossissement : ",
         resLectureNote: " — la valeur saisie ci-dessus est la dimension VRAIE.",
+        resPsoLecture: "Lecture sur l'échelle du PSO-1 : ", resPsoUnit: "millièmes soviétiques (1 millième = 1,047 mrad)",
+        resPsoNote: "Chevrons placés aux reports calculés pour la 7N1 (830 m/s) : 3,4 / 7,1 / 11,3 millièmes. Leur position réelle n'est chiffrée par aucune source consultée.",
         resDistYards: "Yards", resImpPrefix: "Impact : ", dirUp: "HAUT", dirDown: "BAS", dirRight: "DROITE", dirLeft: "GAUCHE",
         unitCm: "cm", unitIn: "po", lblKeyboardHint: "Survolez la lunette pour utiliser le clavier (Flèches = Clics, +/- = Zoom)"
     },
@@ -58,6 +60,8 @@ const translations = {
         resDistPrefix: "Distance: ", resDistMeters: "Meters",
         resLecture: "Reticle reading at this magnification: ",
         resLectureNote: " — the value entered above is the TRUE subtension.",
+        resPsoLecture: "Reading on the PSO-1 scale: ", resPsoUnit: "Soviet thousandths (1 thousandth = 1.047 mrad)",
+        resPsoNote: "Chevrons placed at the holdovers computed for 7N1 (830 m/s): 3.4 / 7.1 / 11.3 thousandths. Their actual position is not given by any source consulted.",
         resDistYards: "Yards", resImpPrefix: "Impact: ", dirUp: "UP", dirDown: "DOWN", dirRight: "RIGHT", dirLeft: "LEFT",
         unitCm: "cm", unitIn: "in", lblKeyboardHint: "Hover over scope for keyboard controls (Arrows = Clicks, +/- = Zoom)"
     }
@@ -692,6 +696,12 @@ function updateApp() {
     if (focalPlane === 'sfp' && Math.abs(currentMag - magMax) > 1e-6 && magMax > 0) {
         const lecture = milsRead * (currentMag / magMax);
         txt += `\n${t.resLecture}${lecture.toFixed(2)} mil${t.resLectureNote}`;
+    }
+    // PSO-1 : l'échelle est graduée en millièmes soviétiques (1/6000 de tour),
+    // pas en mrad ; la valeur saisie est la dimension VRAIE en mrad.
+    if (style === 'pso') {
+        txt += `\n${t.resPsoLecture}${(milsRead / (2 * Math.PI / 6)).toFixed(2)} ${t.resPsoUnit}`;
+        txt += `\n${t.resPsoNote}`;
     }
     document.getElementById('distanceResult').innerText = txt;
 

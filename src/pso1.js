@@ -1,9 +1,24 @@
 /**
  * PSO1ReticleGenerator
- * Mathematically accurate SVG & Canvas generator for the PSO-1 Reticle.
+ * SVG & Canvas generator for the PSO-1 Reticle.
  * Scale: 1 mrad = 'scale' units (default 10).
+ *
+ * UNITÉ. L'échelle horizontale du PSO-1 est graduée en MILLIÈMES SOVIÉTIQUES
+ * (тысячные, 1/6000 de tour = 1,0472 mrad), pas en milliradians : manuel de tir
+ * de la SVD (Наставление по стрелковому делу, Voenizdat 1976, p. 46-47, fig. 35),
+ * « deux traits verticaux = une тысячная (0-01) ». Le télémètre, lui, est calculé
+ * en angle vrai (1,7 m / D) et ne dépend pas de l'unité.
+ *
+ * CHEVRONS. Leur écart angulaire n'est chiffré par AUCUNE source consultée (le manuel
+ * donne seulement les distances, 1 100 / 1 200 / 1 300 m, tambour sur 10). Ils sont
+ * donc placés aux reports qui tomberaient juste pour la 7N1 partant à 830 m/s,
+ * zéro à 1 000 m (solveur du site : 3,37 / 7,13 / 11,28 millièmes) — une position
+ * calculée, pas relevée sur un réticule. Voir wiki materiel:pso1 et sa fiche.
  */
 class PSO1ReticleGenerator {
+    static TH = 2 * Math.PI / 6;                 // mrad par millième soviétique (1,0472)
+    static CHEVRONS_TH = [3.37, 7.13, 11.28];    // reports calculés, en millièmes
+
     constructor(options = {}) {
         this.targetHeight = options.targetHeight || 1.7; // Target height in meters
         this.scale = options.scale || 10;                // Units per 1 mrad
@@ -11,37 +26,23 @@ class PSO1ReticleGenerator {
     }
 
     _generateWindage() {
-        const s = this.scale;
-        let path = `M ${-10 * s},0 H ${-0.5 * s} M ${0.5 * s},0 H ${10 * s} `; 
-        
-        // Generate ticks every 1 mrad
-        for (let i = -10; i <= 10; i++) {
-            if (i === 0) continue;
-            let x = i * s;
-            let y1 = -0.25 * s, y2 = 0.25 * s; // Default tick height (0.5 mrad total)
-            
-            if (Math.abs(i) === 5) { y1 = -0.4 * s; y2 = 0.4 * s; } // Medium tick
-            if (Math.abs(i) === 10) { y1 = -0.6 * s; y2 = 0.6 * s; } // Tall tick
-            
-            path += `M ${x},${y1} V ${y2} `;
-        }
-        return path;
+        return this._generateWindageInternal(this.scale);
     }
 
     _generateStadiametricRangefinder() {
         const s = this.scale;
         let path = "";
         const baselineY = 10 * s; // Baseline located 10 mrad below center
-        
+
         // 1. Draw Baseline
         path += `M ${-14 * s},${baselineY} H ${-4 * s} `;
-        
+
         // 2. Mathematically generate the curve (y = 1700/D * scale)
         for (let d = 1000; d >= 200; d -= 10) {
             let x = (-13 * s) + (1000 - d) * 0.01 * s; // Map 1000m->200m to X-coords
             let heightMrad = (this.targetHeight / d) * 1000;
             let y = baselineY - (heightMrad * s);
-            
+
             let command = (d === 1000) ? "M" : "L";
             path += `${command} ${x.toFixed(2)},${y.toFixed(2)} `;
         }
@@ -52,7 +53,7 @@ class PSO1ReticleGenerator {
             let x = (-13 * s) + (1000 - d) * 0.01 * s;
             let heightMrad = (this.targetHeight / d) * 1000;
             let y = baselineY - (heightMrad * s);
-            
+
             path += `M ${x},${y.toFixed(2)} V ${(y - 0.3 * s).toFixed(2)} `;
         });
 
@@ -61,22 +62,23 @@ class PSO1ReticleGenerator {
 
     render() {
         const s = this.scale;
-        const viewBox = `${-15 * s} ${-6 * s} ${30 * s} ${20 * s}`;
-        
+        const viewBox = `${-15 * s} ${-6 * s} ${30 * s} ${22 * s}`;
+        const T = PSO1ReticleGenerator.TH;
+        const chev = PSO1ReticleGenerator.CHEVRONS_TH.map(c => c * T * s);
+        const last = chev[chev.length - 1];
+
         return `
         <svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" style="color: ${this.color}; width: 100%; height: 100%;">
             <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                 <path d="${this._generateWindage()}" stroke-width="${0.06 * s}" />
-                <path d="M ${-0.5 * s},${0.8 * s} L 0,0 L ${0.5 * s},${0.8 * s}" stroke-width="${0.12 * s}" /> 
-                <path d="M ${-0.3 * s},${1.5 * s} L 0,${1.0 * s} L ${0.3 * s},${1.5 * s}" stroke-width="${0.1 * s}" /> 
-                <path d="M ${-0.3 * s},${2.5 * s} L 0,${2.0 * s} L ${0.3 * s},${2.5 * s}" stroke-width="${0.1 * s}" /> 
-                <path d="M ${-0.3 * s},${3.5 * s} L 0,${3.0 * s} L ${0.3 * s},${3.5 * s}" stroke-width="${0.1 * s}" /> 
-                <path d="M 0,${3.7 * s} V ${9 * s}" stroke-width="${0.06 * s}" />
+                <path d="M ${-0.5 * s},${0.8 * s} L 0,0 L ${0.5 * s},${0.8 * s}" stroke-width="${0.12 * s}" />
+                ${chev.map(y => `<path d="M ${-0.3 * s},${y + 0.5 * s} L 0,${y} L ${0.3 * s},${y + 0.5 * s}" stroke-width="${0.1 * s}" />`).join('')}
+                <path d="M 0,${last + 0.7 * s} V ${last + 3 * s}" stroke-width="${0.06 * s}" />
                 <path d="${this._generateStadiametricRangefinder()}" stroke-width="${0.08 * s}" />
             </g>
             <g font-family="Arial, sans-serif" font-weight="bold" font-size="${0.6 * s}" fill="currentColor" text-anchor="middle">
-                <text x="${-10 * s}" y="${-s}">10</text>
-                <text x="${10 * s}" y="${-s}">10</text>
+                <text x="${-10 * T * s}" y="${-s}">10</text>
+                <text x="${10 * T * s}" y="${-s}">10</text>
                 ${this._generateStadiaLabelsSVG()}
                 <text x="${-3.5 * s}" y="${10.2 * s}" text-anchor="start" font-size="${0.7 * s}">${this.targetHeight.toString().replace('.', ',')}</text>
             </g>
@@ -100,7 +102,7 @@ class PSO1ReticleGenerator {
 
     /**
      * Draws the reticle to a Canvas context.
-     * @param {CanvasRenderingContext2D} ctx 
+     * @param {CanvasRenderingContext2D} ctx
      * @param {number} cx Center X
      * @param {number} cy Center Y
      * @param {Object} options Rendering options (mil, lwFine, applyIllumination)
@@ -125,12 +127,13 @@ class PSO1ReticleGenerator {
         ctx.font = `bold ${Math.max(12, s * 0.8)}px sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        ctx.fillText("10", -10 * s, -s);
-        ctx.fillText("10", 10 * s, -s);
+        const T = PSO1ReticleGenerator.TH;
+        ctx.fillText("10", -10 * T * s, -s);
+        ctx.fillText("10", 10 * T * s, -s);
 
         // 2. Center & BDC Chevrons (Illuminated)
         applyIllumination(true);
-        
+
         // Main Chevron
         ctx.lineWidth = lwFine * 2;
         ctx.beginPath();
@@ -144,14 +147,14 @@ class PSO1ReticleGenerator {
             ctx.moveTo(-0.3 * s, y + 0.5 * s); ctx.lineTo(0, y); ctx.lineTo(0.3 * s, y + 0.5 * s);
             ctx.stroke();
         };
-        drawChev(1.0 * s);
-        drawChev(2.0 * s);
-        drawChev(3.0 * s);
+        const chev = PSO1ReticleGenerator.CHEVRONS_TH.map(c => c * T * s);
+        chev.forEach(drawChev);
 
         // 3. Plumb line & Rangefinder (Illuminated or not depending on preference, PSO-1 usually illuminates all)
         ctx.lineWidth = lwFine;
         ctx.beginPath();
-        ctx.moveTo(0, 3.7 * s); ctx.lineTo(0, 9 * s);
+        const last = chev[chev.length - 1];
+        ctx.moveTo(0, last + 0.7 * s); ctx.lineTo(0, last + 3 * s);
         ctx.stroke();
 
         ctx.stroke(new Path2D(this._generateStadiametricRangefinderInternal(s)));
@@ -179,10 +182,11 @@ class PSO1ReticleGenerator {
 
     // Internal methods that take 's' as parameter for consistency
     _generateWindageInternal(s) {
-        let path = `M ${-10 * s},0 H ${-0.5 * s} M ${0.5 * s},0 H ${10 * s} `; 
+        const T = PSO1ReticleGenerator.TH;   // un trait par millième soviétique
+        let path = `M ${-10 * T * s},0 H ${-0.5 * s} M ${0.5 * s},0 H ${10 * T * s} `;
         for (let i = -10; i <= 10; i++) {
             if (i === 0) continue;
-            let x = i * s;
+            let x = i * T * s;
             let y1 = -0.25 * s, y2 = 0.25 * s;
             if (Math.abs(i) === 5) { y1 = -0.4 * s; y2 = 0.4 * s; }
             if (Math.abs(i) === 10) { y1 = -0.6 * s; y2 = 0.6 * s; }
