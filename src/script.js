@@ -39,7 +39,7 @@ const translations = {
         optCustomTarget: "Custom...",
         lblUnit: "Unit:", optMeters: "Meters (Dist in M)", optInches: "Inches (Dist in Yd)",
         lblWidth: "Width:", lblHeight: "Height:",
-        lblMeasuredDim: "True target subtension (Mrad):", optMeasureHeight: "Height", optMeasureWidth: "Width",
+        lblMeasuredDim: "True target subtension (Mrad/Mil):", optMeasureHeight: "Height", optMeasureWidth: "Width",
         panel2Title: "2. Turrets & Corrections", lblClickValue: "Click Value:",
         optCustomTurret: "Custom...",
         lblElev: "Elevation (Up = +):", lblWind: "Windage (Right = +):",
