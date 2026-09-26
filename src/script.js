@@ -28,7 +28,7 @@ const translations = {
         resLecture: "Lecture au réticule à ce grossissement : ",
         resLectureNote: " — la valeur saisie ci-dessus est la dimension VRAIE.",
         resPsoLecture: "Lecture sur l'échelle du PSO-1 : ", resPsoUnit: "millièmes soviétiques (1 millième = 1,047 mrad)",
-        resPsoNote: "Chevrons placés aux reports calculés pour la 7N1 (830 m/s) : 3,4 / 7,1 / 11,3 millièmes. Leur position réelle n'est chiffrée par aucune source consultée.",
+        resPsoNote: "Chevrons aux angles de hausse de la table de tir officielle (manuel de la SVD, 1976) : 3,3 / 7,2 / 11,4 millièmes sous le chevron principal, pour 1 100 / 1 200 / 1 300 m.",
         resDistYards: "Yards", resImpPrefix: "Impact : ", dirUp: "HAUT", dirDown: "BAS", dirRight: "DROITE", dirLeft: "GAUCHE",
         unitCm: "cm", unitIn: "po", lblKeyboardHint: "Survolez la lunette pour utiliser le clavier (Flèches = Clics, +/- = Zoom)"
     },
@@ -61,7 +61,7 @@ const translations = {
         resLecture: "Reticle reading at this magnification: ",
         resLectureNote: " — the value entered above is the TRUE subtension.",
         resPsoLecture: "Reading on the PSO-1 scale: ", resPsoUnit: "Soviet thousandths (1 thousandth = 1.047 mrad)",
-        resPsoNote: "Chevrons placed at the holdovers computed for 7N1 (830 m/s): 3.4 / 7.1 / 11.3 thousandths. Their actual position is not given by any source consulted.",
+        resPsoNote: "Chevrons at the elevation angles of the official firing table (SVD manual, 1976): 3.3 / 7.2 / 11.4 thousandths below the main chevron, for 1,100 / 1,200 / 1,300 m.",
         resDistYards: "Yards", resImpPrefix: "Impact: ", dirUp: "UP", dirDown: "DOWN", dirRight: "RIGHT", dirLeft: "LEFT",
         unitCm: "cm", unitIn: "in", lblKeyboardHint: "Hover over scope for keyboard controls (Arrows = Clicks, +/- = Zoom)"
     }

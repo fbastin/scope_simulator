@@ -9,15 +9,17 @@
  * « deux traits verticaux = une тысячная (0-01) ». Le télémètre, lui, est calculé
  * en angle vrai (1,7 m / D) et ne dépend pas de l'unité.
  *
- * CHEVRONS. Leur écart angulaire n'est chiffré par AUCUNE source consultée (le manuel
- * donne seulement les distances, 1 100 / 1 200 / 1 300 m, tambour sur 10). Ils sont
- * donc placés aux reports qui tomberaient juste pour la 7N1 partant à 830 m/s,
- * zéro à 1 000 m (solveur du site : 3,37 / 7,13 / 11,28 millièmes) — une position
- * calculée, pas relevée sur un réticule. Voir wiki materiel:pso1 et sa fiche.
+ * CHEVRONS. Ils portent les ANGLES DE HAUSSE de 1 100, 1 200 et 1 300 m, tambour sur
+ * 10 (1 000 m). Table de tir principale du même manuel (annexe 3, p. 167 ; balle à
+ * noyau d'acier, 9,6 g, 830 m/s) : 0°55′, 1°07′, 1°21′, 1°36′ pour 1 000 à 1 300 m,
+ * soit 12′, 26′ et 41′ sous le chevron principal = 3,33 / 7,22 / 11,39 millièmes
+ * (1 millième = 3,6′). Le solveur du site retombe à 0,1 millième près pour la 7N1.
+ * Inconnu : si la gravure reprend ces valeurs ou les millièmes arrondis de la même
+ * table (4 / 8 / 12). Voir wiki materiel:pso1 et sa fiche.
  */
 class PSO1ReticleGenerator {
     static TH = 2 * Math.PI / 6;                 // mrad par millième soviétique (1,0472)
-    static CHEVRONS_TH = [3.37, 7.13, 11.28];    // reports calculés, en millièmes
+    static CHEVRONS_TH = [12 / 3.6, 26 / 3.6, 41 / 3.6];   // table de tir : 12′, 26′, 41′
 
     constructor(options = {}) {
         this.targetHeight = options.targetHeight || 1.7; // Target height in meters
